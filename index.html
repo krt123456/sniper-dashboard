@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Sniper — Live Strategies</title>
+<style>
+  :root{--bg:#0b0e14;--card:#151a23;--card2:#1b212c;--line:#232b38;--tx:#e6edf3;--mut:#8b98a9;
+        --grn:#3fb950;--red:#f85149;--yel:#d29922;--blu:#58a6ff;--accent:#2f81f7}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);
+       -webkit-font-smoothing:antialiased;font-size:15px;line-height:1.4}
+  .wrap{max-width:760px;margin:0 auto;padding:14px}
+  /* PIN */
+  #lock{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99;gap:18px}
+  #lock h1{font-size:20px;font-weight:700} #lock p{color:var(--mut);font-size:13px}
+  #pin{font-size:26px;letter-spacing:10px;text-align:center;width:200px;padding:12px;background:var(--card);
+       border:1px solid var(--line);border-radius:12px;color:var(--tx)}
+  #pinerr{color:var(--red);font-size:13px;height:16px}
+  /* header */
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+  header h1{font-size:18px;font-weight:700}
+  .health{font-size:12px;padding:5px 10px;border-radius:20px;font-weight:600}
+  .h-ok{background:rgba(63,185,80,.15);color:var(--grn)} .h-bad{background:rgba(248,81,73,.15);color:var(--red)}
+  .sub{color:var(--mut);font-size:12px;margin-bottom:14px}
+  /* tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:14px}
+  .tab{flex:1;text-align:center;padding:9px;background:var(--card);border:1px solid var(--line);border-radius:10px;
+       color:var(--mut);font-size:13px;font-weight:600;cursor:pointer}
+  .tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  /* strategy card */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:9px;cursor:pointer;transition:.15s}
+  .card:active{transform:scale(.99)}
+  .card .top{display:flex;align-items:center;justify-content:space-between}
+  .card .nm{font-weight:700;font-size:15px}
+  .pt{font-weight:700;font-size:15px}
+  .pos{color:var(--grn)} .neg{color:var(--red)} .neu{color:var(--mut)}
+  .metrics{display:flex;gap:14px;margin-top:7px;font-size:12px;color:var(--mut);flex-wrap:wrap}
+  .metrics b{color:var(--tx)}
+  .badge{font-size:10px;padding:2px 7px;border-radius:6px;background:var(--card2);color:var(--mut)}
+  .open-dot{color:var(--blu)}
+  /* detail */
+  .detail{display:none}
+  .back{color:var(--accent);font-size:13px;cursor:pointer;margin-bottom:12px;display:inline-block}
+  .dh{font-size:18px;font-weight:700;margin-bottom:4px}
+  .sec{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+  .row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--card);
+       border:1px solid var(--line);border-radius:9px;margin-bottom:6px;font-size:13px}
+  .row .l{display:flex;gap:9px;align-items:center}
+  .pill{font-size:10px;padding:2px 7px;border-radius:5px;font-weight:600}
+  .p-open{background:rgba(88,166,255,.15);color:var(--blu)}
+  .p-tp{background:rgba(63,185,80,.15);color:var(--grn)}
+  .p-sl{background:rgba(248,81,73,.15);color:var(--red)}
+  .p-rec{background:rgba(210,153,34,.15);color:var(--yel)}
+  .empty{color:var(--mut);font-size:13px;text-align:center;padding:20px}
+  /* live feed */
+  .feed-it{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--line);font-size:13px}
+  .feed-it:last-child{border:none}
+  .mut{color:var(--mut);font-size:11px}
+  .pulse{width:7px;height:7px;border-radius:50%;background:var(--grn);display:inline-block;animation:pl 1.6s infinite}
+  @keyframes pl{0%,100%{opacity:1}50%{opacity:.3}}
+  footer{color:var(--mut);font-size:11px;text-align:center;margin:18px 0;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="lock">
+  <h1>🎯 Sniper Dashboard</h1>
+  <p>Enter PIN</p>
+  <input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="••••••••">
+  <div id="pinerr"></div>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+  <header>
+    <h1>🎯 Sniper <span class="pulse"></span></h1>
+    <div id="health" class="health">…</div>
+  </header>
+  <div class="sub" id="sub">loading…</div>
+
+  <!-- LIST VIEW -->
+  <div id="listview">
+    <div class="tabs">
+      <div class="tab on" data-t="strats" onclick="setTab('strats')">📊 Strategies</div>
+      <div class="tab" data-t="feed" onclick="setTab('feed')">📡 Live Feed</div>
+    </div>
+    <div id="strats"></div>
+    <div id="feed" style="display:none"></div>
+  </div>
+
+  <!-- DETAIL VIEW -->
+  <div id="detail" class="detail">
+    <span class="back" onclick="closeDetail()">← Back</span>
+    <div class="dh" id="d-name"></div>
+    <div class="metrics" id="d-metrics"></div>
+    <div class="sec">Open positions (<span id="d-opencount">0</span>)</div>
+    <div id="d-open"></div>
+    <div class="sec">Recent closes</div>
+    <div id="d-closes"></div>
+  </div>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+const PIN="08031998";
+// PIN gate
+const pin=document.getElementById('pin');
+pin.addEventListener('input',()=>{
+  if(pin.value.length===8){
+    if(pin.value===PIN){sessionStorage.setItem('ok','1');unlock();}
+    else{document.getElementById('pinerr').textContent='Wrong PIN';pin.value='';}
+  }
+});
+if(sessionStorage.getItem('ok')==='1')unlock();
+function unlock(){document.getElementById('lock').style.display='none';document.getElementById('app').style.display='block';load();setInterval(load,5000);}
+
+let DATA=null, curStrat=null;
+function cls(v){return v==null?'neu':(v>0?'pos':(v<0?'neg':'neu'));}
+function sign(v){return v==null?'—':(v>0?'+':'')+v;}
+
+async function load(){
+  try{
+    const r=await fetch('data.json?_='+Date.now());
+    DATA=await r.json();
+    render();
+  }catch(e){document.getElementById('sub').textContent='⚠️ data unavailable';}
+}
+
+function render(){
+  const h=DATA.health;
+  const he=document.getElementById('health');
+  he.className='health '+(h.ok?'h-ok':'h-bad');
+  he.textContent=h.ok?'🟢 Healthy':'🔴 Issue';
+  document.getElementById('sub').textContent=
+    `Open ${h.open} · closed ${h.closed_30m}/30m · updated ${DATA.updated_str}`;
+  document.getElementById('footer').innerHTML=DATA.note;
+  if(curStrat){renderDetail();return;}
+  // strategies
+  const sv=document.getElementById('strats');
+  sv.innerHTML=DATA.strategies.map(s=>{
+    const pt=s.mature?`<span class="pt ${cls(s.per_trade)}">${sign(s.per_trade)}$/trade</span>`
+                     :`<span class="badge">gathering (${s.closed})</span>`;
+    return `<div class="card" onclick="openDetail('${s.name}')">
+      <div class="top"><span class="nm">${s.name}</span>${pt}</div>
+      <div class="metrics">
+        <span><b>${s.closed}</b> trades</span>
+        <span>win <b>${s.win}%</b></span>
+        <span>rug <b>${s.rug}%</b></span>
+        ${s.open>0?`<span class="open-dot">● <b>${s.open}</b> open</span>`:''}
+      </div></div>`;
+  }).join('');
+  // feed
+  const fv=document.getElementById('feed');
+  fv.innerHTML='<div class="card" style="padding:0;cursor:default">'+DATA.feed.map(f=>{
+    const cl=cls(f.pnl);const rs=f.reason||'';
+    let pill='p-rec';if(rs.includes('take_profit'))pill='p-tp';else if(rs.includes('stop_loss'))pill='p-sl';
+    return `<div class="feed-it"><span class="l"><b>${f.strat}</b> · ${f.sym}</span>
+      <span><span class="${cl}">${sign(f.pnl)}%</span> <span class="mut">${f.ago_min}m</span></span></div>`;
+  }).join('')+'</div>';
+}
+
+function openDetail(name){curStrat=name;document.getElementById('listview').style.display='none';
+  document.getElementById('detail').style.display='block';renderDetail();window.scrollTo(0,0);}
+function closeDetail(){curStrat=null;document.getElementById('detail').style.display='none';
+  document.getElementById('listview').style.display='block';render();}
+function renderDetail(){
+  const s=DATA.strategies.find(x=>x.name===curStrat);if(!s){closeDetail();return;}
+  document.getElementById('d-name').textContent=s.name;
+  document.getElementById('d-metrics').innerHTML=
+    `<span><b>${s.closed}</b> trades</span><span>win <b>${s.win}%</b></span><span>rug <b>${s.rug}%</b></span>`+
+    (s.mature?`<span>${sign(s.per_trade)}$/trade</span>`:`<span class="badge">gathering data</span>`);
+  const op=(DATA.open_positions[curStrat]||[]);
+  document.getElementById('d-opencount').textContent=op.length;
+  document.getElementById('d-open').innerHTML=op.length?op.map(p=>
+    `<div class="row"><span class="l"><span class="pill p-open">OPEN</span> <b>${p.sym}</b></span>
+     <span class="mut">${p.age_min}m · $${p.size}</span></div>`).join(''):'<div class="empty">No open positions</div>';
+  const cl=DATA.feed.filter(f=>f.strat===curStrat).slice(0,12);
+  document.getElementById('d-closes').innerHTML=cl.length?cl.map(f=>{
+    const c=cls(f.pnl);const rs=f.reason||'';let pill='p-rec',lbl='RECYCLE';
+    if(rs.includes('take_profit')){pill='p-tp';lbl='TP';}else if(rs.includes('stop_loss')){pill='p-sl';lbl='SL';}
+    else if(rs.includes('trail')){pill='p-tp';lbl='TRAIL';}else if(rs.includes('rotate')){pill='p-rec';lbl='ROTATE';}
+    return `<div class="row"><span class="l"><span class="pill ${pill}">${lbl}</span> <b>${f.sym}</b></span>
+      <span><span class="${c}">${sign(f.pnl)}%</span> <span class="mut">${f.ago_min}m</span></span></div>`;
+  }).join(''):'<div class="empty">No recent closes</div>';
+}
+function setTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
+  document.getElementById('strats').style.display=t==='strats'?'block':'none';
+  document.getElementById('feed').style.display=t==='feed'?'block':'none';}
+</script>
+</body>
+</html>
