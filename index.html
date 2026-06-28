@@ -138,16 +138,19 @@ function render(){
   // strategies
   const sv=document.getElementById('strats');
   sv.innerHTML=DATA.strategies.map(s=>{
-    const pt=s.mature?`<span class="pt ${cls(s.per_trade)}">${sign(s.per_trade)}$/trade</span>`
-                     :`<span class="badge">gathering (${s.closed})</span>`;
+    // primary metric = compounding capital (from $400). cap color by growth.
+    const capc = s.capital_pct>0?'pos':(s.capital_pct<0?'neg':'neu');
+    const capTag = `<span class="pt ${capc}">$${s.capital} <span style="font-size:11px;opacity:.8">(${sign(s.capital_pct)}%)</span></span>`;
     const liveOpen = (s.open>0)
       ? `<span class="open-dot">● <b>${s.open}</b> open</span>`+
         (s.open_pnl_avg!=null?` <span class="${cls(s.open_pnl_avg)}">${sign(s.open_pnl_avg)}% now</span>`:'')
       : '';
+    const hist = s.mature?`<span>${sign(s.per_trade)}$/trade</span>`
+                         :(s.closed>0?`<span class="badge">${s.closed} trades</span>`:`<span class="badge">new</span>`);
     return `<div class="card" onclick="openDetail('${s.name}')">
-      <div class="top"><span class="nm">${s.name}</span>${pt}</div>
+      <div class="top"><span class="nm">${s.name}</span>${capTag}</div>
       <div class="metrics">
-        <span><b>${s.closed}</b> trades</span>
+        ${hist}
         <span>win <b>${s.win}%</b></span>
         <span>rug <b>${s.rug}%</b></span>
         ${liveOpen}
@@ -170,9 +173,11 @@ function closeDetail(){curStrat=null;document.getElementById('detail').style.dis
 function renderDetail(){
   const s=DATA.strategies.find(x=>x.name===curStrat);if(!s){closeDetail();return;}
   document.getElementById('d-name').textContent=s.name;
+  const capc=s.capital_pct>0?'pos':(s.capital_pct<0?'neg':'neu');
   document.getElementById('d-metrics').innerHTML=
+    `<span class="${capc}"><b>$${s.capital}</b> (${sign(s.capital_pct)}% from $400)</span>`+
     `<span><b>${s.closed}</b> trades</span><span>win <b>${s.win}%</b></span><span>rug <b>${s.rug}%</b></span>`+
-    (s.mature?`<span>${sign(s.per_trade)}$/trade</span>`:`<span class="badge">gathering data</span>`);
+    (s.mature?`<span>${sign(s.per_trade)}$/trade</span>`:'');
   const op=(DATA.open_positions[curStrat]||[]);
   document.getElementById('d-opencount').textContent=op.length;
   // live summary: total value + winners/losers right now
