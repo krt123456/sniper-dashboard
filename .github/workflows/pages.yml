@@ -1,0 +1,34 @@
+name: Deploy dashboard to Pages
+
+on:
+  push:
+    branches: [master]
+    paths: ['data.json', 'index.html', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# THE FIX: serialize deploys. Rapid every-2-min pushes no longer race —
+# a newer run supersedes an in-flight one cleanly instead of GitHub rejecting
+# the overlap with "Deployment failed, try again later".
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
