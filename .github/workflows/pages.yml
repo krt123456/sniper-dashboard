@@ -3,7 +3,7 @@ name: Deploy dashboard to Pages
 on:
   push:
     branches: [master]
-    paths: ['data.json', 'index.html', '.github/workflows/pages.yml']
+    paths: ['index.html', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:

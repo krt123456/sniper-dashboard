@@ -120,7 +120,7 @@ function sign(v){return v==null?'—':(v>0?'+':'')+v;}
 
 async function load(){
   try{
-    const r=await fetch('data.json?_='+Date.now());
+    const r=await fetch('https://raw.githubusercontent.com/krt123456/sniper-dashboard/master/data.json?_='+Date.now());
     DATA=await r.json();
     render();
   }catch(e){document.getElementById('sub').textContent='⚠️ data unavailable';}
